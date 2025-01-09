@@ -1,0 +1,145 @@
+PuTTY settings:
+COM:
+115200 Bits per second
+8 Data bits
+None for Parity
+1 Stop Bits
+None for Flow Control
+
+Power on switch and connect over COM in PuTTY
+
+-------------------------------
+
+Once switch has booted, (you might need to skip the BMP {BareMetalProvisioning} setup):
+
+en
+This enables Privileged EXEC mode
+The command line should now have a # after the host name.
+Ie. DellEMC#
+
+conf
+This enables Global Configuration mode
+
+-------------------------
+
+(conf)
+interface range Te1/1-1/48
+
+This selects ports 1/1 - 1/48 for configuration assuming they’re a 10GbE SFP+ port (regardless of inserted SFP).
+
+no shutdown
+
+This switches the ports on.
+
+Switchport
+
+This turns all selected ports into a Layer 2 access port.
+
+end
+Takes you back to priv EXEC mode.
+
+conf
+hostname [hostname here]
+
+Changes hostname of the switch
+
+end
+
+
+copy running-config startup-config
+Saves the running config to the startup config.
+
+
+Conf
+
+Interface port-channel 1
+Creates port channel
+-
+No shutdown
+-
+Switchport
+
+
+Interface fortyGigE 1/54
+
+Port-channel-protocol lacp
+Port-channel 1 mode active
+
+(No port-channel-protocol lacp- Deactivate 10gb linking)
+
+No shutdown
+
+
+
+Extra useful bits:
+
+en
+show running-config
+Shows all ports and their state
+
+en
+show inventory
+Shows serial number (service tag)
+
+en
+conf
+interface range Te1/1-1/48
+mtu 9216
+This enables Jumbo Frames on the selected interface range - for use in an EVS setup.
+
+
+exit
+This logs out of EXEC mode (not really needed, might as well just pull the power if you’re done configuring and its saved)
+
+
+
+
+
+
+
+
+
+FLATTEN WITH BOOTABLE USB
+Mount USB
+
+
+1. Enter the following command to stop the ONIE discovery process if it is running
+    ONIE:/ # onie-discovery-stop
+
+
+2. Plug the USB drive with the desired operating system into the USB port on the device.
+
+
+3. Enter the following command to create a USB mount location on the system: 
+    ONIE:/ # mkdir /mnt/media
+4. Validate the specific file path for the USB drive on the switch with the blkid command. 
+    ONIE:/ # blkid
+      Example
+  	ONIE:/ # blkid  (Omitting few lines for brevity)
+   	/dev/db: LABEL="THUMBDRIVE" UUID="14A6-FEE0"  ========è Here file path is /dev/sdb1
+ 
+5. Enter the following command to mount the usb. The vfat option is used for FAT32 formatted drives.
+     ONIE:/ # mount -t vfat /mnt/media
+   	Example
+   	ONIE:/ # mount -t vfat /dev/sdb1 /mnt/media
+Install the software from USB
+
+
+Install the software from the USB drive, where /mnt/media specifies the path where the USB partition is mounted.
+ONIE:/ # onie-nos-install /mnt/media/
+ 
+Sample Output
+
+
+ONIE:/ # onie-discovery-stop
+ONIE:/ # mkdir /mnt/media
+ONIE:/ # blkid  
+/dev/sda4: UUID="c4e653fd-b843-452f-9c9d-64429a3f945e"
+/dev/sda3: LABEL="EDA-DIAG" UUID="bc182a2d-aa35-
+/dev/sda2: LABEL="ONIE-BOOT" UUID="17760947- "
+/dev/sdb1: LABEL="THUMBDRIVE" UUID="14A6-FEE0"   
+/dev/sda1: LABEL="EFI System" UUID="90AE-9B38"
+ 
+ONIE:/ # mount -t vfat /dev/sdb1 /mnt/media
+ONIE:/ # onie-nos-install /mnt/media/<cumulus-install-[PLATFORM].bin
+
